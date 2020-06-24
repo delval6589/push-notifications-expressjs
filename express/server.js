@@ -10,10 +10,9 @@ const {
 } = require("../faunadb/subscriptions");
 
 const app = express();
+const router = express.Router();
 
-app.use(bodyParser.json());
-
-app.get("/api/subscription/:customerId/:deviceId", async (req, res) => {
+router.get("/api/subscription/:customerId/:deviceId", async (req, res) => {
   try {
     const subscription = await readSubscription(
       req.params.customerId,
@@ -25,7 +24,7 @@ app.get("/api/subscription/:customerId/:deviceId", async (req, res) => {
   }
 });
 
-app.post("/api/subscription", async (req, res) => {
+router.post("/api/subscription", async (req, res) => {
   try {
     await addSubscription(req.body);
     res.status(201).json({});
@@ -34,7 +33,7 @@ app.post("/api/subscription", async (req, res) => {
   }
 });
 
-app.delete("/api/subscription/:customerId/:deviceId", async (req, res) => {
+router.delete("/api/subscription/:customerId/:deviceId", async (req, res) => {
   try {
     await removeSubscription(req.params.customerId, req.params.deviceId);
     res.status(204).json({});
@@ -42,6 +41,9 @@ app.delete("/api/subscription/:customerId/:deviceId", async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
+
+app.use(bodyParser.json());
+app.use("/.netlify/functions/server", router);
 
 module.exports = app;
 module.exports.handler = serverless(app);
