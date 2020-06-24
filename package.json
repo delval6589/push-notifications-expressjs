@@ -22,6 +22,7 @@
   },
   "homepage": "https://github.com/delval6589/push-notifications-expressjs#readme",
   "dependencies": {
+    "encoding": "^0.1.12",
     "faunadb": "^2.14.2"
   },
   "devDependencies": {
