@@ -8,6 +8,7 @@ const {
   addSubscription,
   removeSubscription,
 } = require("../faunadb/subscriptions");
+const { isValidSubscription } = require("../scripts/server.utils");
 
 const app = express();
 const router = express.Router();
@@ -26,6 +27,11 @@ router.get("/api/subscription/:customerId/:deviceId", async (req, res) => {
 
 router.post("/api/subscription", async (req, res) => {
   try {
+    if (!isValidSubscription(req.body)) {
+      res.status(400).json({ error: "Invalid subscription." });
+      return;
+    }
+
     await addSubscription(req.body);
     res.status(201).json({});
   } catch (error) {
