@@ -43,3 +43,15 @@ module.exports.removeSubscription = async (customerId, deviceId) => {
 
   await client.query(q.Delete(subscriptionRef));
 };
+
+module.exports.getAllUserSubscriptions = (customerId) =>
+  client
+    .query(
+      q.Map(
+        q.Paginate(q.Match(q.Index("subscriptions_customerId"), customerId)),
+        q.Lambda("subscription", q.Get(q.Var("subscription")))
+      )
+    )
+    .then(({ data: results }) =>
+      results.length ? results.map((result) => result.data) : []
+    );

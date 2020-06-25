@@ -7,8 +7,10 @@ const {
   readSubscription,
   addSubscription,
   removeSubscription,
+  getAllUserSubscriptions,
 } = require("../faunadb/subscriptions");
-const { isValidSubscription } = require("../scripts/server.utils");
+const isValidSubscription = require("../scripts/validate.subscription");
+const sendNotification = require("../scripts/send.notification");
 
 const app = express();
 const router = express.Router();
@@ -43,6 +45,40 @@ router.delete("/api/subscription/:customerId/:deviceId", async (req, res) => {
   try {
     await removeSubscription(req.params.customerId, req.params.deviceId);
     res.status(204).json({});
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.post("/api/send-push-msg", async (req, res) => {
+  try {
+    const customerId = req.body.customerId;
+    const subscriptions = await getAllUserSubscriptions(customerId);
+
+    if (!subscriptions.length) {
+      res.status(400).json({ error: "No subscriptions active for the user." });
+      return;
+    }
+
+    await Promise.all(
+      subscriptions.map((subscription) =>
+        sendNotification(
+          subscription.details,
+          JSON.stringify(req.body.notification)
+        ).catch((error) => {
+          if (error.statusCode === 404 || error.statusCode === 410) {
+            // Subscription has expired or is no longer valid
+            return removeSubscription(
+              subscription.customerId,
+              subscription.deviceId
+            );
+          } else {
+            throw error;
+          }
+        })
+      )
+    );
+    res.status(200).json({ status: "success" });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
