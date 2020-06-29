@@ -6,20 +6,13 @@ const client = new faunadb.Client({
   secret: process.env.FAUNADB_SECRET,
 });
 
-const getSubscriptionRef = (customerId, deviceId) =>
+const getSubscriptionRefByEndpoint = (endpoint) =>
   client
-    .query(
-      q.Paginate(
-        q.Match(q.Index("subscriptions_customerId_deviceId"), [
-          customerId,
-          deviceId,
-        ])
-      )
-    )
+    .query(q.Paginate(q.Match(q.Index("subscriptions_endpoint"), [endpoint])))
     .then((result) => (result.data.length ? result.data[0] : null));
 
-module.exports.readSubscription = async (customerId, deviceId) => {
-  const subscriptionRef = await getSubscriptionRef(customerId, deviceId);
+module.exports.readSubscription = async (endpoint) => {
+  const subscriptionRef = await getSubscriptionRefByEndpoint(endpoint);
 
   if (!subscriptionRef) {
     return null;
@@ -34,8 +27,8 @@ module.exports.addSubscription = (subscription) =>
     q.Create(q.Ref("classes/subscriptions"), { data: subscription })
   );
 
-module.exports.removeSubscription = async (customerId, deviceId) => {
-  const subscriptionRef = await getSubscriptionRef(customerId, deviceId);
+module.exports.removeSubscription = async (endpoint) => {
+  const subscriptionRef = await getSubscriptionRefByEndpoint(endpoint);
 
   if (!subscriptionRef) {
     return;

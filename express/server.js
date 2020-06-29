@@ -17,19 +17,16 @@ const sendNotification = require("../scripts/send.notification");
 const app = express();
 const router = express.Router();
 
-router.get("/api/subscription/:customerId/:deviceId", async (req, res) => {
+router.get("/api/get-subscription", async (req, res) => {
   try {
-    const subscription = await readSubscription(
-      req.params.customerId,
-      req.params.deviceId
-    );
+    const subscription = await readSubscription(req.query.endpoint);
     res.status(200).json(subscription);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });
 
-router.post("/api/subscription", async (req, res) => {
+router.post("/api/create-subscription", async (req, res) => {
   try {
     if (!isValidSubscription(req.body)) {
       res.status(400).json({ error: "Invalid subscription." });
@@ -43,9 +40,9 @@ router.post("/api/subscription", async (req, res) => {
   }
 });
 
-router.delete("/api/subscription/:customerId/:deviceId", async (req, res) => {
+router.delete("/api/remove-subscription", async (req, res) => {
   try {
-    await removeSubscription(req.params.customerId, req.params.deviceId);
+    await removeSubscription(req.query.endpoint);
     res.status(204).json({});
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -70,10 +67,7 @@ router.post("/api/send-push-msg", async (req, res) => {
         ).catch((error) => {
           if (error.statusCode === 404 || error.statusCode === 410) {
             // Subscription has expired or is no longer valid
-            return removeSubscription(
-              subscription.customerId,
-              subscription.deviceId
-            );
+            return removeSubscription(subscription.details.endpoint);
           } else {
             throw error;
           }
